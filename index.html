@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Dr.Reju-All · 틱톡 어필리에이트 영상 코치</title>
+<title>Dr.Reju-All · TikTok Affiliate Video Coach</title>
 <style>
   :root{
     --bg:#0b0b0f; --card:#15151d; --card2:#1d1d27; --line:#2a2a36;
@@ -103,92 +103,92 @@
     <div class="brand">
       <div class="logo">🎬</div>
       <div>
-        <h1>Dr.Reju-All 어필리에이트 영상 코치</h1>
-        <div class="sub">카메라 녹화 → 훅·셀링포인트·카메라 액션 AI 채점 · TikTok Shop</div>
+        <h1>Dr.Reju-All Affiliate Video Coach</h1>
+        <div class="sub">Record on camera → AI scores hook · selling points · camera action · TikTok Shop</div>
       </div>
     </div>
-    <button class="btn ghost" id="btnSettings">⚙️ 설정</button>
+    <button class="btn ghost" id="btnSettings">⚙️ Settings</button>
   </header>
 
-  <!-- 1. 제품 · 브리프 -->
+  <!-- 1. Product · Brief -->
   <div class="card">
-    <h2>1 · 제품 &amp; 콘텐츠 브리프</h2>
+    <h2>1 · Product &amp; Content Brief</h2>
     <div class="row">
       <div>
-        <label>제품 선택</label>
+        <label>Product</label>
         <select id="productSel"></select>
       </div>
       <div>
-        <label>훅 앵글</label>
+        <label>Hook angle</label>
         <select id="hookSel"></select>
       </div>
     </div>
     <div class="brief" id="brief"></div>
   </div>
 
-  <!-- 2. 녹화 -->
+  <!-- 2. Record -->
   <div class="card">
-    <h2>2 · 영상 녹화 (카메라 + 음성)</h2>
+    <h2>2 · Record video (camera + audio)</h2>
     <div class="stage" id="stage">
-      <div class="placeholder" id="stagePlaceholder">📷 아래 <b>카메라 켜기</b>를 눌러 시작하세요.<br><span class="muted">세로(9:16) 촬영 권장 · 자연광</span></div>
+      <div class="placeholder" id="stagePlaceholder">📷 Tap <b>Start camera</b> below to begin.<br><span class="muted">Shoot vertical (9:16) · natural light</span></div>
       <video id="preview" playsinline muted class="hidden"></video>
       <video id="playback" playsinline controls class="hidden"></video>
       <div class="rectag" id="rectag"><span class="dot"></span> REC <span id="recTime">0:00</span></div>
     </div>
     <div class="controls">
-      <button class="btn" id="btnCam">📷 카메라 켜기</button>
-      <button class="btn primary" id="btnRec" disabled>● 녹화 시작</button>
-      <button class="btn" id="btnRetake" disabled>↺ 다시</button>
+      <button class="btn" id="btnCam">📷 Start camera</button>
+      <button class="btn primary" id="btnRec" disabled>● Start recording</button>
+      <button class="btn" id="btnRetake" disabled>↺ Retake</button>
     </div>
     <div class="transcript">
-      <label>전사(음성인식) — 필요하면 직접 수정하세요</label>
-      <textarea id="transcript" placeholder="녹화 중 말한 내용이 여기에 자동으로 전사됩니다. 브라우저가 음성인식을 지원하지 않으면 직접 입력하세요."></textarea>
+      <label>Transcript (speech recognition) — edit if needed</label>
+      <textarea id="transcript" placeholder="What you say while recording is transcribed here automatically. If your browser doesn't support speech recognition, type it in yourself."></textarea>
       <div class="metrics" id="metrics"></div>
     </div>
     <div class="controls">
-      <button class="btn primary" id="btnAnalyze" disabled>🚀 어필리에이트 영상으로 채점받기</button>
+      <button class="btn primary" id="btnAnalyze" disabled>🚀 Score my affiliate video</button>
     </div>
   </div>
 
-  <!-- 3. 결과 -->
+  <!-- 3. Result -->
   <div class="card hidden" id="resultCard">
-    <h2>3 · AI 채점 결과</h2>
+    <h2>3 · AI Scorecard</h2>
     <div id="resultBody"></div>
   </div>
 
   <footer>
-    프레임은 브라우저에서만 캡처되어 채점용으로 전송되며, 영상 원본은 서버에 저장되지 않습니다.<br>
-    Chrome 권장 (음성인식). #Dr.RejuAll
+    Frames are captured in your browser and sent only for scoring; the original video is never stored on the server.<br>
+    Chrome recommended (speech recognition). #Dr.RejuAll
   </footer>
 </div>
 
-<!-- 설정 모달 -->
+<!-- Settings modal -->
 <div class="modal" id="settingsModal">
   <div class="box">
-    <h2 style="margin-top:0">설정</h2>
-    <label>접속 비밀번호 (서버 키 사용 시)</label>
-    <input type="password" id="setPass" placeholder="팀 공용 비밀번호">
-    <label>또는 개인 Claude API 키 (이 브라우저에만 저장)</label>
+    <h2 style="margin-top:0">Settings</h2>
+    <label>Access passcode (when using the server key)</label>
+    <input type="password" id="setPass" placeholder="Team passcode">
+    <label>Or your own Claude API key (stored in this browser only)</label>
     <input type="password" id="setKey" placeholder="sk-ant-...">
-    <label>모델</label>
+    <label>Model</label>
     <select id="setModel">
-      <option value="claude-sonnet-5">claude-sonnet-5 (권장, 비전)</option>
-      <option value="claude-opus-5">claude-opus-5 (정밀)</option>
-      <option value="claude-haiku-4-5">claude-haiku-4-5 (빠름/저렴)</option>
+      <option value="claude-sonnet-5">claude-sonnet-5 (recommended, vision)</option>
+      <option value="claude-opus-5">claude-opus-5 (most precise)</option>
+      <option value="claude-haiku-4-5">claude-haiku-4-5 (fast / cheap)</option>
     </select>
-    <label>피드백 언어</label>
-    <select id="setLang"><option value="ko">한국어</option><option value="en">English</option></select>
+    <label>Feedback language</label>
+    <select id="setLang"><option value="en">English</option><option value="ko">한국어</option></select>
     <div class="controls" style="justify-content:flex-end;margin-top:14px">
-      <button class="btn ghost" id="setCancel">닫기</button>
-      <button class="btn primary" id="setSave">저장</button>
+      <button class="btn ghost" id="setCancel">Close</button>
+      <button class="btn primary" id="setSave">Save</button>
     </div>
-    <p class="muted" style="margin-top:10px">서버에 <code>ANTHROPIC_API_KEY</code>가 설정돼 있으면 접속 비밀번호만 넣으면 됩니다. 없으면 개인 키로 폴백합니다.</p>
+    <p class="muted" style="margin-top:10px">If <code>ANTHROPIC_API_KEY</code> is set on the server, just enter the access passcode. Otherwise it falls back to your own key.</p>
   </div>
 </div>
 
 <script>
 // ============================================================
-//  Dr.Reju-All 제품 지식 (AI 채점의 정답 기준 = ground truth)
+//  Dr.Reju-All product knowledge (ground truth for AI scoring)
 // ============================================================
 const REJUALL_KB = `BRAND: Dr.Reju-All (by NeoSimplix). A K-Pharmacy No.1, doctor/pharmacist-led skincare brand. Tagline "Rejuvenate from All Damage". Philosophy: Right Ingredients, Right Guidance, Right Results. Signature ingredient across the line: medical-grade PDRN (99% purity salmon DNA). Handle @rejuall_official.
 
@@ -206,15 +206,15 @@ TIKTOK AD-SAFE RULES (enforce strictly in adSafety):
 - BANNED / flag if used: "miracle", "cure", "guaranteed", claims of instant/permanent/dramatic transformation; medical/prescription words "treats", "heals", "anti-aging"; and NEVER say the word "Amazon".
 - Winning tone: educational, not salesy. Show real application, explain WHY, set realistic expectations. Teaching > overselling.`;
 
-// 제품별 브리프(콘텐츠 레퍼런스) — Content Brief for US Affiliates 기반
+// Per-product brief (content reference) — based on the Content Brief for US Affiliates
 const PRODUCTS = {
-  cream:{ name:"PDRN Rejuvenating Cream (히어로)", size:"20/60ml",
+  cream:{ name:"PDRN Rejuvenating Cream (Hero)", size:"20/60ml",
     hooks:[
-      {label:"레이저/미세침 후 진정", hook:"What I used after laser to calm my skin.",
+      {label:"Soothing after laser/microneedling", hook:"What I used after laser to calm my skin.",
         say:["After treatments your skin barrier is compromised.","PDRN supports repair and calming.","This isn't about glow — it's about recovery."],
         visual:["Natural / studio lighting only","Show redness honestly (no exaggeration)","Apply slowly — texture shot is key","Close-up of absorption","Before → after over days (not instant)"],
         cta:["This is what I used during recovery.","Linked on TikTok Shop."]},
-      {label:"K-pharmacy 히어로 소개", hook:"The K-pharmacy PDRN cream everyone's talking about.",
+      {label:"K-pharmacy hero intro", hook:"The K-pharmacy PDRN cream everyone's talking about.",
         say:["99% pure salmon DNA (PDRN) at 1,200ppm.","Soothes irritation, reduces redness and post-blemish marks.","Gentle enough for sensitive skin, use AM or PM."],
         visual:["Show the tube & texture","Smooth it into skin, non-greasy finish","Natural lighting, no filters"],
         cta:["Linked on TikTok Shop.","My repair step that stays in my routine."]}
@@ -267,20 +267,20 @@ const CAN_SAY=["Gentle on my skin","Works well for sensitive skin","Feels calmer
 const DONT_SAY=['"miracle" / "cure" / "guaranteed"','instant / permanent / dramatic transformation','"treats" / "heals" / "anti-aging" (medical)','over-edited before/after','the word "Amazon"'];
 
 // ============================================================
-//  상태 & 저장
+//  State & storage
 // ============================================================
 const $=id=>document.getElementById(id);
 const store={
   get k(){return localStorage.getItem("aff_key")||""}, set k(v){localStorage.setItem("aff_key",v)},
   get pass(){return localStorage.getItem("aff_pass")||""}, set pass(v){localStorage.setItem("aff_pass",v)},
   get model(){return localStorage.getItem("aff_model")||"claude-sonnet-5"}, set model(v){localStorage.setItem("aff_model",v)},
-  get lang(){return localStorage.getItem("aff_lang")||"ko"}, set lang(v){localStorage.setItem("aff_lang",v)},
+  get lang(){return localStorage.getItem("aff_lang")||"en"}, set lang(v){localStorage.setItem("aff_lang",v)},
 };
 let stream=null, mediaRecorder=null, chunks=[], recTimer=null, recStart=0;
 let frames=[], videoURL=null, recognizing=false, recognition=null, transcriptFinal="";
 
 // ============================================================
-//  제품 / 브리프 UI
+//  Product / brief UI
 // ============================================================
 function fillProducts(){
   $("productSel").innerHTML=Object.keys(PRODUCTS).map(k=>`<option value="${k}">${PRODUCTS[k].name}</option>`).join("");
@@ -296,29 +296,29 @@ function renderBrief(){
   const {p,h}=curTask();
   const li=a=>a.map(x=>`<li>${x}</li>`).join("");
   $("brief").innerHTML=`
-    <div class="h">🎯 훅 (첫 3초)</div><div class="pill">${h.hook}</div>
-    <div class="h">🗣️ 말할 내용 (What to say)</div><ul>${li(h.say)}</ul>
-    <div class="h">🎥 카메라/비주얼 디렉션</div><ul>${li(h.visual)}</ul>
+    <div class="h">🎯 Hook (first 3s)</div><div class="pill">${h.hook}</div>
+    <div class="h">🗣️ What to say</div><ul>${li(h.say)}</ul>
+    <div class="h">🎥 Camera / visual direction</div><ul>${li(h.visual)}</ul>
     <div class="h">📣 CTA</div><ul>${li(h.cta)}</ul>
     <div class="h">⚠️ TikTok Ad-Safe</div>
     <div class="safe">
-      <div><span class="ok">✅ 써도 됨</span><ul style="margin:6px 0 0">${li(CAN_SAY)}</ul></div>
-      <div><span class="no">❌ 금지</span><ul style="margin:6px 0 0">${li(DONT_SAY)}</ul></div>
+      <div><span class="ok">✅ OK to say</span><ul style="margin:6px 0 0">${li(CAN_SAY)}</ul></div>
+      <div><span class="no">❌ Avoid</span><ul style="margin:6px 0 0">${li(DONT_SAY)}</ul></div>
     </div>`;
 }
 
 // ============================================================
-//  카메라 / 녹화
+//  Camera / recording
 // ============================================================
 async function openCamera(){
   try{
     stream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:"user",width:{ideal:1080},height:{ideal:1920}}, audio:true});
-  }catch(e){ alert("카메라/마이크 접근이 거부됐어요. 브라우저 권한을 확인하세요.\n"+e.message); return; }
+  }catch(e){ alert("Camera/microphone access was denied. Please check your browser permissions.\n"+e.message); return; }
   const v=$("preview"); v.srcObject=stream; v.classList.remove("hidden");
   $("playback").classList.add("hidden"); $("stagePlaceholder").classList.add("hidden");
   await v.play().catch(()=>{});
-  $("btnRec").disabled=false; $("btnCam").textContent="📷 카메라 재설정";
+  $("btnRec").disabled=false; $("btnCam").textContent="📷 Reset camera";
 }
 function pickMime(){
   const c=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm","video/mp4"];
@@ -329,7 +329,7 @@ function startRec(){
   chunks=[]; frames=[]; transcriptFinal=""; $("transcript").value="";
   const mime=pickMime();
   try{ mediaRecorder=new MediaRecorder(stream, mime?{mimeType:mime}:undefined); }
-  catch(e){ alert("이 브라우저는 영상 녹화를 지원하지 않아요."); return; }
+  catch(e){ alert("This browser doesn't support video recording."); return; }
   mediaRecorder.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
   mediaRecorder.onstop=finishRec;
   mediaRecorder.start(200);
@@ -338,7 +338,7 @@ function startRec(){
   window._capInt=setInterval(captureFrame,1400);
   recTimer=setInterval(()=>{ $("recTime").textContent=fmt((Date.now()-recStart)/1000); },250);
   $("rectag").style.display="flex";
-  $("btnRec").textContent="■ 정지"; $("btnRec").classList.remove("primary");
+  $("btnRec").textContent="■ Stop"; $("btnRec").classList.remove("primary");
   $("btnCam").disabled=true; $("btnRetake").disabled=true; $("btnAnalyze").disabled=true;
   startSTT();
 }
@@ -364,7 +364,7 @@ function finishRec(){
   videoURL=URL.createObjectURL(blob);
   const pb=$("playback"); pb.src=videoURL; pb.classList.remove("hidden");
   $("preview").classList.add("hidden");
-  $("btnRec").textContent="● 녹화 시작"; $("btnRec").classList.add("primary");
+  $("btnRec").textContent="● Start recording"; $("btnRec").classList.add("primary");
   $("btnCam").disabled=false; $("btnRetake").disabled=false; $("btnAnalyze").disabled=false;
   computeMetrics();
 }
@@ -375,7 +375,7 @@ function retake(){
 }
 function fmt(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
 
-// 프레임을 고르게 최대 8장으로 샘플 (첫 훅 프레임 포함)
+// Evenly sample up to 8 frames (including the opening hook frame)
 function sampleFrames(max=8){
   if(frames.length<=max) return frames.slice();
   const out=[frames[0]];
@@ -385,11 +385,11 @@ function sampleFrames(max=8){
 }
 
 // ============================================================
-//  음성 인식 (Web Speech API)
+//  Speech recognition (Web Speech API)
 // ============================================================
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 function startSTT(){
-  if(!SR) return; // 미지원: 사용자가 직접 입력
+  if(!SR) return; // unsupported: user types transcript manually
   recognition=new SR(); recognition.lang="en-US"; recognition.continuous=true; recognition.interimResults=true;
   let interim="";
   recognition.onresult=e=>{
@@ -415,13 +415,13 @@ function computeMetrics(){
   const dur=frames.length?frames[frames.length-1].t:0;
   const wpm=dur>0?Math.round(words.length/(dur/60)):0;
   const uniq=new Set(words.map(w=>w.toLowerCase().replace(/[^a-z']/g,""))).size;
-  const m=[{n:fmt(dur),l:"길이"},{n:words.length,l:"단어 수"},{n:wpm,l:"WPM"},
-    {n:frames.length,l:"캡처 프레임"},{n:uniq,l:"어휘 다양성"}];
+  const m=[{n:fmt(dur),l:"Length"},{n:words.length,l:"Words"},{n:wpm,l:"WPM"},
+    {n:frames.length,l:"Frames"},{n:uniq,l:"Vocabulary"}];
   $("metrics").innerHTML=m.map(x=>`<div class="metric"><div class="num">${x.n}</div><div class="lab">${x.l}</div></div>`).join("");
 }
 
 // ============================================================
-//  Claude 채점 (멀티모달)
+//  Claude scoring (multimodal)
 // ============================================================
 async function anthropicRaw(body){
   let sr=null;
@@ -430,25 +430,25 @@ async function anthropicRaw(body){
     body:JSON.stringify(body)}); }catch(e){ sr=null; }
   if(sr && sr.status!==404 && sr.status!==501){
     let data=null; try{data=await sr.json();}catch(e){}
-    if(sr.status===401) throw new Error("접속 비밀번호가 올바르지 않습니다. 설정에서 확인하세요.");
-    if(!sr.ok){ let m=(data&&(data.error&&data.error.message||data.error))||("서버 오류 "+sr.status);
-      if(sr.status===400&&/credit|balance/i.test(m)) m="서버 키의 크레딧이 부족합니다.";
+    if(sr.status===401) throw new Error("Incorrect access passcode. Please check it in Settings.");
+    if(!sr.ok){ let m=(data&&(data.error&&data.error.message||data.error))||("Server error "+sr.status);
+      if(sr.status===400&&/credit|balance/i.test(m)) m="The server key is out of credit.";
       throw new Error(m); }
     return data;
   }
-  if(!store.k) throw new Error("API 키가 없습니다. 설정에서 개인 키를 입력하거나, 서버에 키를 설정한 뒤 접속 비밀번호를 넣으세요.");
+  if(!store.k) throw new Error("No API key. Enter your own key in Settings, or set a server key and enter the access passcode.");
   const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
     headers:{"content-type":"application/json","x-api-key":store.k,"anthropic-version":"2023-06-01",
       "anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify(body)});
-  if(!res.ok){ let msg="API 오류 "+res.status; try{const j=await res.json(); msg=(j.error&&j.error.message)||msg;}catch(e){}
-    if(res.status===401) msg="API 키가 올바르지 않습니다."; if(res.status===429) msg="요청이 많습니다. 잠시 후 다시.";
+  if(!res.ok){ let msg="API error "+res.status; try{const j=await res.json(); msg=(j.error&&j.error.message)||msg;}catch(e){}
+    if(res.status===401) msg="Invalid API key."; if(res.status===429) msg="Too many requests. Please try again shortly.";
     throw new Error(msg); }
   return res.json();
 }
 
-const SCORE_KEYS=[["keyIdea","핵심 메시지 Key idea"],["videoHook","훅 Video hook (첫 3초)"],
-  ["sellingPoint","셀링포인트 전달 Selling point"],["cameraAction","카메라 액션 Camera action"],["delivery","전달력 Delivery"]];
+const SCORE_KEYS=[["keyIdea","Key idea"],["videoHook","Video hook (first 3s)"],
+  ["sellingPoint","Selling point"],["cameraAction","Camera action"],["delivery","Delivery"]];
 
 function schema(){
   const so={type:"object",additionalProperties:false,properties:{score:{type:"integer"},note:{type:"string"}},required:["score","note"]};
@@ -471,7 +471,7 @@ function schema(){
 function systemPrompt(){
   const lang=store.lang==="ko"
     ? "Write grade, every 'note', all items in hitSellingPoints/missedSellingPoints/cameraNotes/strengths/fixes, adSafety.flags and nextFocus in KOREAN. Keep rewrittenHook and rewrittenScript in natural spoken ENGLISH."
-    : "Write everything in English.";
+    : "Write everything in natural English.";
   return `You are a senior TikTok Shop affiliate content coach for the K-beauty brand Dr.Reju-All. You review a creator's affiliate video and score it for scroll-stopping power, persuasion, and ad-safety.
 
 You are given: (1) several still FRAMES sampled in time order from the recorded video, (2) the spoken TRANSCRIPT, and (3) the TARGET product + the content brief the creator was asked to follow.
@@ -493,10 +493,10 @@ ${lang}`;
 async function analyze(){
   const t=($("transcript").value||"").trim();
   const fr=sampleFrames(8);
-  if(!fr.length){ showErr("먼저 영상을 녹화하세요."); return; }
+  if(!fr.length){ showErr("Record a video first."); return; }
   const {p,h}=curTask();
-  $("btnAnalyze").disabled=true; $("btnAnalyze").innerHTML='<span class="spin"></span> 채점 중...';
-  showInfo("프레임 "+fr.length+"장 + 전사를 Claude에 보내는 중...");
+  $("btnAnalyze").disabled=true; $("btnAnalyze").innerHTML='<span class="spin"></span> Scoring...';
+  showInfo("Sending "+fr.length+" frames + transcript to Claude...");
   const content=[{type:"text",text:`TARGET PRODUCT: ${p.name} (${p.size})
 CHOSEN HOOK ANGLE: "${h.hook}"
 BRIEF — what to say: ${h.say.join(" | ")}
@@ -511,16 +511,16 @@ Below are ${fr.length} still frames sampled in time order (first = the opening h
     messages:[{role:"user",content}], output_config:{format:{type:"json_schema",schema:schema()}}};
   try{
     const data=await anthropicRaw(body);
-    if(data.stop_reason==="refusal") throw new Error("모델이 요청을 거부했습니다.");
+    if(data.stop_reason==="refusal") throw new Error("The model declined the request.");
     const tb=(data.content||[]).find(b=>b.type==="text");
-    if(!tb) throw new Error("응답을 해석할 수 없습니다.");
+    if(!tb) throw new Error("Couldn't parse the response.");
     renderResult(JSON.parse(tb.text));
   }catch(e){ showErr(e.message||String(e)); }
-  finally{ $("btnAnalyze").disabled=false; $("btnAnalyze").textContent="🚀 어필리에이트 영상으로 채점받기"; }
+  finally{ $("btnAnalyze").disabled=false; $("btnAnalyze").textContent="🚀 Score my affiliate video"; }
 }
 
 // ============================================================
-//  결과 렌더
+//  Render result
 // ============================================================
 function showErr(m){ $("resultCard").classList.remove("hidden"); $("resultBody").innerHTML=`<div class="banner err">⚠️ ${m}</div>`; scrollRes(); }
 function showInfo(m){ $("resultCard").classList.remove("hidden"); $("resultBody").innerHTML=`<div class="banner info"><span class="spin"></span> ${m}</div>`; scrollRes(); }
@@ -534,7 +534,7 @@ function renderResult(r){
   const li=a=>(a&&a.length?a:["—"]).map(x=>`<li>${esc(x)}</li>`).join("");
   const safe=r.adSafety||{passed:true,flags:[]};
   const safeHtml=safe.passed
-    ? `<span class="tag good">✅ Ad-safe 통과 — 금지 표현 없음</span>`
+    ? `<span class="tag good">✅ Ad-safe passed — no banned phrases</span>`
     : safe.flags.map(f=>`<span class="tag bad">🚫 ${esc(f)}</span>`).join("");
   $("resultBody").innerHTML=`
     <div class="overall">
@@ -544,31 +544,31 @@ function renderResult(r){
     </div>
     <div class="bars">${SCORE_KEYS.map(bar).join("")}</div>
 
-    <h2 style="margin-top:16px">🎯 셀링포인트</h2>
+    <h2 style="margin-top:16px">🎯 Selling points</h2>
     <div class="row">
-      <div><div class="muted">전달됨 ✅</div><ul class="list">${li(r.hitSellingPoints)}</ul></div>
-      <div><div class="muted">놓침 ❌</div><ul class="list">${li(r.missedSellingPoints)}</ul></div>
+      <div><div class="muted">Delivered ✅</div><ul class="list">${li(r.hitSellingPoints)}</ul></div>
+      <div><div class="muted">Missed ❌</div><ul class="list">${li(r.missedSellingPoints)}</ul></div>
     </div>
 
-    <h2 style="margin-top:8px">🎥 카메라/비주얼 코칭</h2>
+    <h2 style="margin-top:8px">🎥 Camera / visual coaching</h2>
     <ul class="list">${li(r.cameraNotes)}</ul>
 
-    <h2 style="margin-top:8px">⚠️ 광고 안전성 (Ad-safe)</h2>
+    <h2 style="margin-top:8px">⚠️ Ad-safety</h2>
     <div class="flags">${safeHtml}</div>
 
-    <h2 style="margin-top:14px">👍 강점</h2><ul class="list">${li(r.strengths)}</ul>
-    <h2 style="margin-top:8px">🔧 개선 우선순위</h2><ul class="list">${li(r.fixes)}</ul>
+    <h2 style="margin-top:14px">👍 Strengths</h2><ul class="list">${li(r.strengths)}</ul>
+    <h2 style="margin-top:8px">🔧 Priority fixes</h2><ul class="list">${li(r.fixes)}</ul>
 
-    <div class="rew"><div class="lbl">✨ 더 강한 훅 (English)</div>${esc(r.rewrittenHook||"")}</div>
-    <div class="rew"><div class="lbl">📝 개선 대본 (~20-30s, ad-safe)</div>${esc(r.rewrittenScript||"")}</div>
-    <div class="rew"><div class="lbl">🎯 다음에 집중할 것</div>${esc(r.nextFocus||"")}</div>
+    <div class="rew"><div class="lbl">✨ Stronger hook</div>${esc(r.rewrittenHook||"")}</div>
+    <div class="rew"><div class="lbl">📝 Improved script (~20-30s, ad-safe)</div>${esc(r.rewrittenScript||"")}</div>
+    <div class="rew"><div class="lbl">🎯 Focus next</div>${esc(r.nextFocus||"")}</div>
   `;
   scrollRes();
 }
 function esc(s){ return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 
 // ============================================================
-//  설정 모달
+//  Settings modal
 // ============================================================
 function openSettings(){
   $("setPass").value=store.pass; $("setKey").value=store.k; $("setModel").value=store.model; $("setLang").value=store.lang;
@@ -594,7 +594,7 @@ $("btnSettings").onclick=openSettings;
 $("setCancel").onclick=()=>$("settingsModal").classList.remove("open");
 $("setSave").onclick=saveSettings;
 fillProducts();
-if(!SR){ $("transcript").placeholder="이 브라우저는 음성인식을 지원하지 않아요(Chrome 권장). 녹화 후 말한 내용을 직접 입력하세요."; }
+if(!SR){ $("transcript").placeholder="This browser doesn't support speech recognition (Chrome recommended). Type what you said after recording."; }
 </script>
 </body>
 </html>
