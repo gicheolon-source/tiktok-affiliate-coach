@@ -29,10 +29,16 @@
   .btn:disabled{opacity:.45;cursor:not-allowed}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
   .card h2{font-size:14px;margin:0 0 10px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-  select,input[type=text],input[type=password],textarea{
+  select,input[type=text],input[type=password],input[type=url],textarea{
     width:100%;background:var(--card2);border:1px solid var(--line);border-radius:10px;
     color:var(--fg);padding:10px 12px;font-size:14px;font-family:inherit}
   textarea{resize:vertical;min-height:80px}
+  .urlrow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:8px}
+  .urlrow label{margin-top:0}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin:4px 0 6px}
+  .stat{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
+  .stat .sv{font-size:16px;font-weight:800}
+  .stat .sl{font-size:11px;color:var(--mut);margin-top:2px}
   label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
   .row{display:flex;gap:10px;flex-wrap:wrap}
   .row>*{flex:1;min-width:140px}
@@ -126,24 +132,38 @@
     <div class="brief" id="brief"></div>
   </div>
 
-  <!-- 2. Record -->
+  <!-- 2. Upload / Record -->
   <div class="card">
-    <h2>2 · Record video (camera + audio)</h2>
+    <h2>2 · Upload your final video</h2>
+    <p class="muted" style="margin-top:-4px">Upload the edited video you posted, paste its TikTok link, and we score the content <b>and</b> its real EUKA stats. You can also record a quick take instead.</p>
     <div class="stage" id="stage">
-      <div class="placeholder" id="stagePlaceholder">📷 Tap <b>Start camera</b> below to begin.<br><span class="muted">Shoot vertical (9:16) · natural light</span></div>
+      <div class="placeholder" id="stagePlaceholder">📁 Tap <b>Upload final video</b> or <b>Record</b> below.<br><span class="muted">Vertical 9:16 · natural light</span></div>
       <video id="preview" playsinline muted class="hidden"></video>
       <video id="playback" playsinline controls class="hidden"></video>
       <div class="rectag" id="rectag"><span class="dot"></span> REC <span id="recTime">0:00</span></div>
     </div>
     <div class="controls">
-      <button class="btn" id="btnCam">📷 Start camera</button>
-      <button class="btn primary" id="btnRec" disabled>● Start recording</button>
+      <button class="btn primary" id="btnUpload">📁 Upload final video</button>
+      <button class="btn" id="btnCam">📷 Record instead</button>
+      <button class="btn primary hidden" id="btnRec" disabled>● Start recording</button>
       <button class="btn" id="btnRetake" disabled>↺ Retake</button>
+      <input type="file" id="fileInput" accept="video/*" style="display:none">
+    </div>
+    <div class="urlrow">
+      <div style="flex:1;min-width:220px">
+        <label>Posted TikTok video URL (for real stats)</label>
+        <input type="url" id="ttUrl" placeholder="https://www.tiktok.com/@handle/video/7xxxxxxxxxxxxx">
+      </div>
+      <div>
+        <label>Market</label>
+        <select id="regionSel"><option value="us">US</option><option value="uk">UK</option></select>
+      </div>
     </div>
     <div class="transcript">
-      <label>Transcript (speech recognition) — edit if needed</label>
-      <textarea id="transcript" placeholder="What you say while recording is transcribed here automatically. If your browser doesn't support speech recognition, type it in yourself."></textarea>
+      <label>Transcript — auto-transcribed, edit if needed</label>
+      <textarea id="transcript" placeholder="Upload a video to auto-transcribe the audio (works on iPhone too). Or type what you said."></textarea>
       <div class="metrics" id="metrics"></div>
+      <div class="muted" id="sttStatus" style="margin-top:4px"></div>
     </div>
     <div class="controls">
       <button class="btn primary" id="btnAnalyze" disabled>🚀 Score my affiliate video</button>
@@ -275,9 +295,11 @@ const store={
   get pass(){return localStorage.getItem("aff_pass")||""}, set pass(v){localStorage.setItem("aff_pass",v)},
   get model(){return localStorage.getItem("aff_model")||"claude-sonnet-5"}, set model(v){localStorage.setItem("aff_model",v)},
   get lang(){return localStorage.getItem("aff_lang")||"en"}, set lang(v){localStorage.setItem("aff_lang",v)},
+  get region(){return localStorage.getItem("aff_region")||"us"}, set region(v){localStorage.setItem("aff_region",v)},
 };
 let stream=null, mediaRecorder=null, chunks=[], recTimer=null, recStart=0;
 let frames=[], videoURL=null, recognizing=false, recognition=null, transcriptFinal="";
+let uploadedFile=null, lastStat=null;
 
 // ============================================================
 //  Product / brief UI
@@ -318,7 +340,8 @@ async function openCamera(){
   const v=$("preview"); v.srcObject=stream; v.classList.remove("hidden");
   $("playback").classList.add("hidden"); $("stagePlaceholder").classList.add("hidden");
   await v.play().catch(()=>{});
-  $("btnRec").disabled=false; $("btnCam").textContent="📷 Reset camera";
+  $("btnRec").classList.remove("hidden"); $("btnRec").disabled=false;
+  $("btnCam").textContent="📷 Reset camera"; uploadedFile=null;
 }
 function pickMime(){
   const c=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm","video/mp4"];
@@ -382,6 +405,144 @@ function sampleFrames(max=8){
   const step=(frames.length-1)/(max-1);
   for(let i=1;i<max;i++) out.push(frames[Math.round(i*step)]);
   return out;
+}
+
+// ============================================================
+//  Upload final video → frames + Whisper transcription
+// ============================================================
+const MAX_TRANSCRIBE_SEC=90; // keeps the WAV base64 payload under the serverless body limit
+
+async function handleUpload(file){
+  if(!file) return;
+  uploadedFile=file;
+  // Show the uploaded video in the playback element.
+  if(videoURL) URL.revokeObjectURL(videoURL);
+  videoURL=URL.createObjectURL(file);
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  $("preview").classList.add("hidden"); $("stagePlaceholder").classList.add("hidden");
+  $("btnRec").classList.add("hidden");
+  const pb=$("playback"); pb.srcObject=null; pb.src=videoURL; pb.classList.remove("hidden");
+  $("btnCam").textContent="📷 Record instead";
+  transcriptFinal=""; $("transcript").value="";
+  setStt("📸 Sampling frames from your video...");
+  try{ frames=await sampleFramesFromFile(videoURL); }
+  catch(e){ frames=[]; }
+  computeMetrics();
+  $("btnAnalyze").disabled=frames.length===0;
+  // Auto-transcribe with Whisper.
+  await transcribeUploaded(file);
+}
+
+// Load the uploaded file into an offscreen <video>, seek to evenly spaced
+// timestamps and grab a frame at each (jpeg, width 480) — same shape as
+// the live-capture frames[] so the rest of the pipeline is unchanged.
+function sampleFramesFromFile(url, max=8){
+  return new Promise((resolve,reject)=>{
+    const v=document.createElement("video");
+    v.muted=true; v.playsInline=true; v.preload="auto"; v.src=url;
+    const out=[]; let times=[], idx=0;
+    const grab=()=>{
+      const W=480, H=Math.round(W*(v.videoHeight/v.videoWidth||1.777));
+      const c=document.createElement("canvas"); c.width=W; c.height=H;
+      c.getContext("2d").drawImage(v,0,0,W,H);
+      out.push({t:v.currentTime, data:c.toDataURL("image/jpeg",0.6)});
+    };
+    v.onloadedmetadata=()=>{
+      const dur=isFinite(v.duration)&&v.duration>0?v.duration:0;
+      if(!dur){ // duration unknown (some webm); fall back to a single frame at t=0
+        v.currentTime=0; return;
+      }
+      for(let i=0;i<max;i++) times.push(Math.min(dur-0.05, dur*i/(max-1||1)));
+      v.currentTime=times[0];
+    };
+    v.onseeked=()=>{
+      grab(); idx++;
+      if(idx<times.length) v.currentTime=times[idx];
+      else resolve(out);
+    };
+    v.onerror=()=>reject(new Error("Could not read the video file."));
+    // Safety timeout so we never hang forever.
+    setTimeout(()=>{ if(out.length) resolve(out); }, 15000);
+  });
+}
+
+function setStt(msg){ $("sttStatus").textContent=msg||""; }
+
+async function transcribeUploaded(file){
+  setStt("🎧 Extracting audio & transcribing (Whisper)...");
+  let wav;
+  try{ wav=await extractAudioWav(file, MAX_TRANSCRIBE_SEC); }
+  catch(e){ setStt("⚠️ Couldn't extract audio — type the transcript manually."); return; }
+  if(!wav){ setStt("⚠️ No audio track found — type the transcript manually."); return; }
+  const b64=await blobToBase64(wav);
+  try{
+    const r=await fetch("/api/transcribe",{method:"POST",
+      headers:{"content-type":"application/json","x-app-passcode":store.pass||""},
+      body:JSON.stringify({audio:b64,mime:"audio/wav"})});
+    if(r.status===501){ setStt("ℹ️ Auto-transcription is off (server OpenAI key not set) — type the transcript manually."); return; }
+    if(r.status===401){ setStt("⚠️ Wrong access passcode (Settings) — transcript not fetched."); return; }
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ setStt("⚠️ Transcription failed: "+((j&&j.error)||r.status)); return; }
+    transcriptFinal=(j.text||"").trim();
+    window._sttSegments=j.segments||[]; // kept for Phase 2 pacing analysis
+    $("transcript").value=transcriptFinal;
+    computeMetrics();
+    setStt(transcriptFinal?"✅ Transcribed. Edit above if needed.":"⚠️ Whisper returned no speech — type the transcript manually.");
+  }catch(e){ setStt("⚠️ Transcription request failed — type the transcript manually."); }
+}
+
+// Decode → downmix to mono → resample to 16 kHz → 16-bit PCM WAV (small payload).
+async function extractAudioWav(file, maxSec){
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC) throw new Error("No AudioContext");
+  const buf=await file.arrayBuffer();
+  const ctx=new AC();
+  let decoded;
+  try{ decoded=await ctx.decodeAudioData(buf.slice(0)); }
+  finally{ try{ctx.close();}catch(e){} }
+  if(!decoded || !decoded.length) return null;
+  const dur=Math.min(decoded.duration, maxSec||decoded.duration);
+  const rate=16000;
+  const off=new OfflineAudioContext(1, Math.max(1,Math.ceil(dur*rate)), rate);
+  const src=off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start(0);
+  const rendered=await off.startRendering();
+  return encodeWav(rendered.getChannelData(0), rate);
+}
+
+function encodeWav(samples, rate){
+  const n=samples.length, buf=new ArrayBuffer(44+n*2), view=new DataView(buf);
+  const ws=(o,s)=>{ for(let i=0;i<s.length;i++) view.setUint8(o+i,s.charCodeAt(i)); };
+  ws(0,"RIFF"); view.setUint32(4,36+n*2,true); ws(8,"WAVE"); ws(12,"fmt ");
+  view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
+  view.setUint32(24,rate,true); view.setUint32(28,rate*2,true); view.setUint16(32,2,true);
+  view.setUint16(34,16,true); ws(36,"data"); view.setUint32(40,n*2,true);
+  let o=44; for(let i=0;i<n;i++){ let s=Math.max(-1,Math.min(1,samples[i])); view.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); o+=2; }
+  return new Blob([view],{type:"audio/wav"});
+}
+
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(String(r.result).split(",")[1]||"");
+    r.onerror=reject; r.readAsDataURL(blob);
+  });
+}
+
+// Parse the numeric TikTok video id from a share URL (…/video/7xxxx or /v/7xxxx).
+function parseVideoId(url){
+  if(!url) return "";
+  const m=String(url).match(/(?:\/video\/|\/v\/|[?&]item_id=)(\d{6,})/) || String(url).match(/(\d{10,})/);
+  return m?m[1]:"";
+}
+
+async function fetchStats(videoId, region){
+  try{
+    const r=await fetch(`/api/euka?videoId=${encodeURIComponent(videoId)}&region=${region}`);
+    if(r.status===501) return {off:true};
+    const j=await r.json().catch(()=>null);
+    if(!j||!j.ok) return null;
+    return j.found?j.stat:{missing:true, note:j.note};
+  }catch(e){ return null; }
 }
 
 // ============================================================
@@ -484,7 +645,8 @@ async function anthropicRaw(body){
 }
 
 const SCORE_KEYS=[["keyIdea","Key idea"],["videoHook","Video hook (first 3s)"],
-  ["sellingPoint","Selling point"],["cameraAction","Camera action"],["delivery","Delivery"]];
+  ["faceOnCamera","Face / on-camera presence"],["sellingPoint","Selling point"],
+  ["productExplanation","Product explanation"],["cameraAction","Camera action"],["delivery","Delivery"]];
 
 function schema(){
   const so={type:"object",additionalProperties:false,properties:{score:{type:"integer"},note:{type:"string"}},required:["score","note"]};
@@ -496,30 +658,39 @@ function schema(){
     hitSellingPoints:{type:"array",items:{type:"string"}},
     missedSellingPoints:{type:"array",items:{type:"string"}},
     cameraNotes:{type:"array",items:{type:"string"}},
+    performanceRead:{type:"array",items:{type:"string"}},
     adSafety:{type:"object",additionalProperties:false,
       properties:{passed:{type:"boolean"},flags:{type:"array",items:{type:"string"}}},required:["passed","flags"]},
     strengths:{type:"array",items:{type:"string"}},
     fixes:{type:"array",items:{type:"string"}},
     rewrittenHook:{type:"string"}, rewrittenScript:{type:"string"}, nextFocus:{type:"string"}
-  },required:["overall","grade","scores","hitSellingPoints","missedSellingPoints","cameraNotes","adSafety","strengths","fixes","rewrittenHook","rewrittenScript","nextFocus"]};
+  },required:["overall","grade","scores","hitSellingPoints","missedSellingPoints","cameraNotes","performanceRead","adSafety","strengths","fixes","rewrittenHook","rewrittenScript","nextFocus"]};
 }
 
 function systemPrompt(){
   const lang=store.lang==="ko"
     ? "Write grade, every 'note', all items in hitSellingPoints/missedSellingPoints/cameraNotes/strengths/fixes, adSafety.flags and nextFocus in KOREAN. Keep rewrittenHook and rewrittenScript in natural spoken ENGLISH."
     : "Write everything in natural English.";
-  return `You are a senior TikTok Shop affiliate content coach for the K-beauty brand Dr.Reju-All. You review a creator's affiliate video and score it for scroll-stopping power, persuasion, and ad-safety.
+  return `You are a senior TikTok Shop affiliate content coach for the K-beauty brand Dr.Reju-All, running an "Affiliate Academy" review. You review a creator's FINAL, already-posted affiliate video and score it for scroll-stopping power, persuasion, ad-safety, AND how it actually performed.
 
-You are given: (1) several still FRAMES sampled in time order from the recorded video, (2) the spoken TRANSCRIPT, and (3) the TARGET product + the content brief the creator was asked to follow.
+You are given: (1) several still FRAMES sampled in time order from the final video, (2) the spoken TRANSCRIPT (Whisper), (3) the TARGET product + the content brief the creator was asked to follow, and (4) when available, the video's REAL PERFORMANCE STATS from EUKA (views, likes, comments, GMV, items sold, engagement rate, conversion rate).
 
 Judge it as a real TikTok affiliate video meant to drive TikTok Shop sales. Frames are low-resolution — judge visual specifics charitably but honestly.
 
-Score 1-10 each: keyIdea (is there ONE clear message?), videoHook (does the FIRST frame + opening transcript line stop the scroll in 3s?), sellingPoint (does the transcript deliver the product's REAL selling points accurately, per PRODUCT FACTS — no invented claims), cameraAction (from the frames: framing/9:16, lighting, product visibility, is application/demonstration shown, energy & shot variety), delivery (pacing, clarity, natural confident English).
-overall = 1-100. grade = a short vivid label (e.g. "🔥 Viral-ready", "✅ Solid", "🟡 Needs work", "🔴 Reshoot").
+Score 1-10 each:
+- keyIdea: is there ONE clear message?
+- videoHook: does the FIRST frame + opening transcript line stop the scroll in 3s?
+- faceOnCamera: does a real person appear on camera (face visible, talking to camera, human presence)? Faceless product-only clips convert worse — score low and, in a cameraNote/fix, tell them to show their face.
+- sellingPoint: does the transcript deliver the product's REAL selling points accurately, per PRODUCT FACTS — no invented claims?
+- productExplanation: is the product explained with enough depth (what it is, key ingredient, why it works, how to use) vs. a shallow mention? If thin, say "explain the product more" and name what's missing.
+- cameraAction: from the frames — framing/9:16, lighting, product visibility, is application/demonstration shown, energy & shot variety.
+- delivery: pacing, clarity, natural confident English.
+overall = 1-100. grade = a short vivid label with a letter, e.g. "A · 🔥 Viral-ready", "B · ✅ Solid", "C · 🟡 Needs work", "D · 🔴 Reshoot".
 hitSellingPoints / missedSellingPoints = which real selling points were / weren't communicated.
-cameraNotes = concrete visual coaching from the frames.
+cameraNotes = concrete visual coaching from the frames (framing, face, lighting, demo).
+performanceRead = 2-4 bullets interpreting the REAL STATS if provided: cross-diagnose content vs. results (e.g. "High views but low GMV → hook works, but the CTA/selling point is weak"; "Low views → the hook didn't stop the scroll"; "Good engagement, low conversion → add a clearer TikTok Shop CTA"). If no stats were provided, return an empty array.
 adSafety = {passed, flags[]}: flag EVERY banned word/claim used (see rules). If none, passed:true, flags:[].
-strengths (2-3), fixes (top 3-4 prioritized improvements), rewrittenHook (a stronger 1-line opener in English), rewrittenScript (an improved ~20-30s spoken script, ad-safe, natural English), nextFocus (one thing to practice next).
+strengths (2-3), fixes (top 3-4 prioritized improvements — be specific: "show your face", "explain the PDRN %", "cut the dead middle", "stronger 3s hook"), rewrittenHook (a stronger 1-line opener in English), rewrittenScript (an improved ~20-30s spoken script, ad-safe, natural English), nextFocus (one thing to practice next).
 
 ${REJUALL_KB}
 
@@ -532,7 +703,16 @@ async function analyze(){
   if(!fr.length){ showErr("Record a video first."); return; }
   const {p,h}=curTask();
   $("btnAnalyze").disabled=true; $("btnAnalyze").innerHTML='<span class="spin"></span> Scoring...';
-  showInfo("Sending "+fr.length+" frames + transcript to Claude...");
+  // Fetch the posted video's real EUKA performance stats (if a URL was given).
+  lastStat=null;
+  const vid=parseVideoId($("ttUrl").value);
+  const region=$("regionSel").value||store.region;
+  if(vid){
+    showInfo("Looking up this video's real stats in EUKA...");
+    const s=await fetchStats(vid,region);
+    if(s && !s.off && !s.missing) lastStat=s;
+  }
+  showInfo("Sending "+fr.length+" frames + transcript"+(lastStat?" + real stats":"")+" to Claude...");
   const content=[{type:"text",text:`TARGET PRODUCT: ${p.name} (${p.size})
 CHOSEN HOOK ANGLE: "${h.hook}"
 BRIEF — what to say: ${h.say.join(" | ")}
@@ -542,7 +722,21 @@ BRIEF — CTA: ${h.cta.join(" | ")}
 Below are ${fr.length} still frames sampled in time order (first = the opening hook frame):`}];
   fr.forEach(f=>content.push({type:"image",source:{type:"base64",media_type:"image/jpeg",
     data:f.data.replace(/^data:image\/jpeg;base64,/,"")}}));
-  content.push({type:"text",text:`SPOKEN TRANSCRIPT (from speech recognition; ignore transcription typos):\n"""${t||"(no transcript captured)"}"""\n\nReturn the JSON scorecard now.`});
+  content.push({type:"text",text:`SPOKEN TRANSCRIPT (from speech recognition; ignore transcription typos):\n"""${t||"(no transcript captured)"}"""`});
+  if(lastStat){
+    const cur=lastStat.currencyCode||(region==="uk"?"GBP":"USD");
+    content.push({type:"text",text:`REAL PERFORMANCE STATS (from EUKA — this posted video, ${region.toUpperCase()}):
+- Views: ${lastStat.views}
+- Likes: ${lastStat.likes}
+- Comments: ${lastStat.comments}
+- GMV / revenue: ${cur} ${lastStat.revenue}
+- Items sold: ${lastStat.itemsSold}
+- Engagement rate: ${(lastStat.engagementRate*100).toFixed(2)}%
+- Conversion rate: ${(lastStat.conversionRate*100).toFixed(3)}%
+- Posted: ${lastStat.postedDate||"?"}${lastStat.creatorHandle?"\n- Creator: @"+lastStat.creatorHandle:""}
+Use these in performanceRead to cross-diagnose content vs. results.`});
+  }
+  content.push({type:"text",text:"Return the JSON scorecard now."});
   const body={model:store.model,max_tokens:4000,system:systemPrompt(),
     messages:[{role:"user",content}], output_config:{format:{type:"json_schema",schema:schema()}}};
   try{
@@ -572,6 +766,24 @@ function renderResult(r){
   const safeHtml=safe.passed
     ? `<span class="tag good">✅ Ad-safe passed — no banned phrases</span>`
     : safe.flags.map(f=>`<span class="tag bad">🚫 ${esc(f)}</span>`).join("");
+  let statHtml="";
+  if(lastStat){
+    const cur=lastStat.currencyCode||(store.region==="uk"?"GBP":"USD");
+    const sym=cur==="GBP"?"£":cur==="USD"?"$":cur+" ";
+    const nf=n=>Number(n||0).toLocaleString();
+    const cell=(lbl,val)=>`<div class="stat"><div class="sv">${val}</div><div class="sl">${lbl}</div></div>`;
+    statHtml=`<h2 style="margin-top:16px">📊 Actual performance (EUKA)</h2>
+      <div class="stats">
+        ${cell("Views",nf(lastStat.views))}
+        ${cell("Likes",nf(lastStat.likes))}
+        ${cell("Comments",nf(lastStat.comments))}
+        ${cell("GMV",sym+nf(lastStat.revenue))}
+        ${cell("Items sold",nf(lastStat.itemsSold))}
+        ${cell("Engagement",(lastStat.engagementRate*100).toFixed(2)+"%")}
+        ${cell("Conversion",(lastStat.conversionRate*100).toFixed(3)+"%")}
+      </div>
+      ${(r.performanceRead&&r.performanceRead.length)?`<ul class="list">${li(r.performanceRead)}</ul>`:""}`;
+  }
   $("resultBody").innerHTML=`
     <div class="overall">
       <div class="ring" style="--p:${Math.max(0,Math.min(100,r.overall))}"><div class="v">${r.overall}<small>/100</small></div></div>
@@ -579,6 +791,7 @@ function renderResult(r){
         <div class="muted" style="margin-top:4px">${curTask().p.name}</div></div>
     </div>
     <div class="bars">${SCORE_KEYS.map(bar).join("")}</div>
+    ${statHtml}
 
     <h2 style="margin-top:16px">🎯 Selling points</h2>
     <div class="row">
@@ -621,6 +834,10 @@ function saveSettings(){
 // ============================================================
 $("productSel").onchange=fillHooks;
 $("hookSel").onchange=renderBrief;
+$("btnUpload").onclick=()=>$("fileInput").click();
+$("fileInput").onchange=e=>{ if(e.target.files&&e.target.files[0]) handleUpload(e.target.files[0]); };
+$("regionSel").value=store.region;
+$("regionSel").onchange=e=>{ store.region=e.target.value; };
 $("btnCam").onclick=openCamera;
 $("btnRec").onclick=toggleRec;
 $("btnRetake").onclick=retake;
