@@ -645,8 +645,9 @@ async function anthropicRaw(body){
 }
 
 const SCORE_KEYS=[["keyIdea","Key idea"],["videoHook","Video hook (first 3s)"],
-  ["faceOnCamera","Face / on-camera presence"],["sellingPoint","Selling point"],
-  ["productExplanation","Product explanation"],["cameraAction","Camera action"],["delivery","Delivery"]];
+  ["algoFit","TikTok algorithm fit"],["faceOnCamera","Face / on-camera presence"],
+  ["sellingPoint","Selling point"],["productExplanation","Product explanation"],
+  ["cameraAction","Camera action"],["delivery","Delivery"]];
 
 function schema(){
   const so={type:"object",additionalProperties:false,properties:{score:{type:"integer"},note:{type:"string"}},required:["score","note"]};
@@ -675,20 +676,33 @@ function systemPrompt(){
 
 You are given: (1) several still FRAMES sampled in time order from the final video, (2) the spoken TRANSCRIPT (Whisper), (3) the TARGET product + the content brief the creator was asked to follow, and (4) when available, the video's REAL PERFORMANCE STATS from EUKA (views, likes, comments, GMV, items sold, engagement rate, conversion rate).
 
-Judge it as a real TikTok affiliate video meant to drive TikTok Shop sales. Frames are low-resolution — judge visual specifics charitably but honestly.
+Judge it as a real TikTok affiliate video meant to drive TikTok Shop sales AND to win reach on the For You Page. Frames are low-resolution — judge visual specifics charitably but honestly.
+
+How the TikTok algorithm ranks video (weight your judgment toward these): the For You Page pushes a video mainly on WATCH TIME & completion rate, then re-watches/loops, then SHARES and SAVES, then comments, then likes — and it rewards FAST early engagement (strong signals in the first hour). So the biggest reach drivers are a 3-second hook that holds retention, tight pacing with no dead air, a loopable/rewatchable structure, and share-/comment-worthy moments. A polished but slow, low-retention video will NOT get reach.
 
 Score 1-10 each:
 - keyIdea: is there ONE clear message?
-- videoHook: does the FIRST frame + opening transcript line stop the scroll in 3s?
+- videoHook: does the FIRST frame + opening transcript line stop the scroll in 3s? This is the #1 retention signal — be strict; generic openers ("Hi guys", slow product pans) score low.
+- algoFit: how well does this feed the TikTok algorithm — retention/completion (tight pacing, no dead air or rambling), rewatch/loop potential, share-worthiness, comment-bait, and native feel (true 9:16, on-screen captions, trending-sound energy, no watermark/over-editing)? This is the single biggest driver of whether it gets pushed to the For You Page.
 - faceOnCamera: does a real person appear on camera (face visible, talking to camera, human presence)? Faceless product-only clips convert worse — score low and, in a cameraNote/fix, tell them to show their face.
 - sellingPoint: does the transcript deliver the product's REAL selling points accurately, per PRODUCT FACTS — no invented claims?
 - productExplanation: is the product explained with enough depth (what it is, key ingredient, why it works, how to use) vs. a shallow mention? If thin, say "explain the product more" and name what's missing.
 - cameraAction: from the frames — framing/9:16, lighting, product visibility, is application/demonstration shown, energy & shot variety.
-- delivery: pacing, clarity, natural confident English.
-overall = 1-100. grade = a short vivid label with a letter, e.g. "A · 🔥 Viral-ready", "B · ✅ Solid", "C · 🟡 Needs work", "D · 🔴 Reshoot".
+- delivery: pacing, clarity, natural confident English — dead air, filler, and monotone directly hurt retention.
+
+CALIBRATION — be a demanding critic, not a cheerleader. Grade against a genuinely viral-ready benchmark; most real affiliate videos land in the 40-65 range. Anchor every 1-10 axis:
+  9-10 = exceptional, top ~5% of TikTok Shop content, clear specific evidence
+  7-8  = strong, above average
+  5-6  = average / acceptable but with obvious gaps
+  3-4  = weak, this axis needs a reshoot
+  1-2  = missing or actively hurting the video
+Do NOT award 8+ unless you can point to concrete evidence in the frames/transcript. When in doubt, score LOWER. overall (1-100) must reflect this harsh scale — weight the reach-critical axes (videoHook, algoFit, delivery) most heavily, since retention drives everything else.
+
+grade = a short vivid label with a letter, mapped from overall:
+  85-100 "A · 🔥 Viral-ready", 70-84 "B · ✅ Solid", 55-69 "C · 🟡 Needs work", 40-54 "D · 🟠 Weak", below 40 "F · 🔴 Reshoot".
 hitSellingPoints / missedSellingPoints = which real selling points were / weren't communicated.
 cameraNotes = concrete visual coaching from the frames (framing, face, lighting, demo).
-performanceRead = 2-4 bullets interpreting the REAL STATS if provided: cross-diagnose content vs. results (e.g. "High views but low GMV → hook works, but the CTA/selling point is weak"; "Low views → the hook didn't stop the scroll"; "Good engagement, low conversion → add a clearer TikTok Shop CTA"). If no stats were provided, return an empty array.
+performanceRead = 2-4 bullets interpreting the REAL STATS if provided, read through the algorithm lens: views ≈ how far the algorithm pushed it (low views = the hook/retention failed to satisfy the algorithm; high views = the algorithm liked the retention). Then cross-diagnose content vs. results (e.g. "High views but low GMV → hook & retention work, but the CTA/selling point is weak"; "Low views despite a decent hook → weak completion/shares, tighten the middle"; "Good engagement, low conversion → add a clearer TikTok Shop CTA"). If no stats were provided, return an empty array.
 adSafety = {passed, flags[]}: flag EVERY banned word/claim used (see rules). If none, passed:true, flags:[].
 strengths (2-3), fixes (top 3-4 prioritized improvements — be specific: "show your face", "explain the PDRN %", "cut the dead middle", "stronger 3s hook"), rewrittenHook (a stronger 1-line opener in English), rewrittenScript (an improved ~20-30s spoken script, ad-safe, natural English), nextFocus (one thing to practice next).
 
