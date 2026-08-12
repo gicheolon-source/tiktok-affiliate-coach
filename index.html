@@ -737,14 +737,20 @@ Below are ${fr.length} still frames sampled in time order (first = the opening h
 Use these in performanceRead to cross-diagnose content vs. results.`});
   }
   content.push({type:"text",text:"Return the JSON scorecard now."});
-  const body={model:store.model,max_tokens:4000,system:systemPrompt(),
+  const body={model:store.model,max_tokens:8000,system:systemPrompt(),
     messages:[{role:"user",content}], output_config:{format:{type:"json_schema",schema:schema()}}};
   try{
     const data=await anthropicRaw(body);
     if(data.stop_reason==="refusal") throw new Error("The model declined the request.");
     const tb=(data.content||[]).find(b=>b.type==="text");
     if(!tb) throw new Error("Couldn't parse the response.");
-    renderResult(JSON.parse(tb.text));
+    let parsed;
+    try{ parsed=JSON.parse(tb.text); }
+    catch(pe){
+      if(data.stop_reason==="max_tokens") throw new Error("The scorecard was cut off (response too long). Please try again, or switch the feedback language to English in Settings for a shorter reply.");
+      throw new Error("Couldn't read the scorecard (invalid JSON). Please try again.");
+    }
+    renderResult(parsed);
   }catch(e){ showErr(e.message||String(e)); }
   finally{ $("btnAnalyze").disabled=false; $("btnAnalyze").textContent="🚀 Score my affiliate video"; }
 }

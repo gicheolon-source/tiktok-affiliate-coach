@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
   const model = ALLOWED_MODELS.includes(body.model) ? body.model : "claude-sonnet-5";
   const payload = {
     model,
-    max_tokens: Math.min(Number(body.max_tokens) || 4000, 4096),
+    max_tokens: Math.min(Number(body.max_tokens) || 8000, 8192),
     system: body.system,
     messages: body.messages, // may contain multimodal image blocks — passed through as-is
   };
