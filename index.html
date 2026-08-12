@@ -388,24 +388,60 @@ function sampleFrames(max=8){
 //  Speech recognition (Web Speech API)
 // ============================================================
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-function startSTT(){
-  if(!SR) return; // unsupported: user types transcript manually
-  recognition=new SR(); recognition.lang="en-US"; recognition.continuous=true; recognition.interimResults=true;
-  let interim="";
-  recognition.onresult=e=>{
-    interim="";
+let sttInterim="", sttRestartTimer=null, sttStarting=false;
+function safeStart(){
+  if(!recognition||!recognizing||sttStarting) return;
+  sttStarting=true;
+  try{ recognition.start(); }
+  catch(e){ /* InvalidStateError: already running or restarting too fast — retry shortly */ }
+  setTimeout(()=>{ sttStarting=false; }, 250);
+}
+function buildRecognition(){
+  const rec=new SR();
+  rec.lang="en-US"; rec.continuous=true; rec.interimResults=true; rec.maxAlternatives=1;
+  rec.onresult=e=>{
+    sttInterim="";
     for(let i=e.resultIndex;i<e.results.length;i++){
       const r=e.results[i];
-      if(r.isFinal) transcriptFinal+=(r[0].transcript+" "); else interim+=r[0].transcript;
+      if(r.isFinal) transcriptFinal+=(r[0].transcript+" "); else sttInterim+=r[0].transcript;
     }
-    $("transcript").value=(transcriptFinal+interim).replace(/\s+/g," ").trim();
+    $("transcript").value=(transcriptFinal+sttInterim).replace(/\s+/g," ").trim();
   };
-  recognition.onend=()=>{ if(recognizing){ try{recognition.start();}catch(e){} } };
-  recognizing=true; try{recognition.start();}catch(e){}
+  rec.onerror=ev=>{
+    // 'no-speech'/'network'/'aborted' are recoverable — onend will restart.
+    // 'not-allowed'/'service-not-allowed' = mic blocked, stop for good.
+    if(ev.error==="not-allowed"||ev.error==="service-not-allowed"){
+      recognizing=false;
+      $("transcript").placeholder="Mic blocked for speech recognition — type what you said here.";
+    }
+  };
+  rec.onend=()=>{
+    // Chrome auto-stops on silence/timeout. While still recording, rebuild + restart
+    // (a fresh object after end is more reliable than reusing the ended one).
+    if(!recognizing) return;
+    if(sttRestartTimer) clearTimeout(sttRestartTimer);
+    sttRestartTimer=setTimeout(()=>{
+      if(!recognizing) return;
+      try{ recognition=buildRecognition(); }catch(e){}
+      safeStart();
+    }, 300);
+  };
+  return rec;
+}
+function startSTT(){
+  if(!SR) return; // unsupported: user types transcript manually
+  sttInterim="";
+  recognizing=true;
+  recognition=buildRecognition();
+  safeStart();
 }
 function stopSTT(){
   recognizing=false;
+  if(sttRestartTimer){ clearTimeout(sttRestartTimer); sttRestartTimer=null; }
   if(recognition){ try{recognition.stop();}catch(e){} }
+  // keep any trailing interim words that never finalized
+  const merged=(transcriptFinal+" "+sttInterim).replace(/\s+/g," ").trim();
+  if(merged) transcriptFinal=merged+" ";
   $("transcript").value=transcriptFinal.replace(/\s+/g," ").trim();
   computeMetrics();
 }
