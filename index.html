@@ -35,6 +35,15 @@
   textarea{resize:vertical;min-height:80px}
   .urlrow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:8px}
   .urlrow label{margin-top:0}
+  .pinbar{position:sticky;top:8px;z-index:40;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,.25)}
+  .pinbar .pinlbl{font-size:12px;color:var(--mut);font-weight:800;margin-right:2px}
+  .pinbar .pinlink{display:inline-flex;align-items:center;gap:6px;background:var(--card2);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;
+    color:var(--fg);text-decoration:none;cursor:pointer}
+  .pinbar .pinlink:hover{border-color:#FE2C55;color:#FE2C55}
+  .pinbar .pinlink.pending{opacity:.7;border-style:dashed}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin:4px 0 6px}
   .stat{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
   .stat .sv{font-size:16px;font-weight:800}
@@ -115,6 +124,9 @@
     </div>
     <button class="btn ghost" id="btnSettings">⚙️ Settings</button>
   </header>
+
+  <!-- Pinned, always-visible resources -->
+  <div class="pinbar" id="pinbar"></div>
 
   <!-- 1. Product · Brief -->
   <div class="card">
@@ -228,7 +240,7 @@ TIKTOK AD-SAFE RULES (enforce strictly in adSafety):
 
 // Per-product brief (content reference) — based on the Content Brief for US Affiliates
 const PRODUCTS = {
-  cream:{ name:"PDRN Rejuvenating Cream (Hero)", size:"20/60ml",
+  cream:{ name:"PDRN Rejuvenating Cream", hero:true, size:"20/60ml",
     hooks:[
       {label:"Soothing after laser/microneedling", hook:"What I used after laser to calm my skin.",
         say:["After treatments your skin barrier is compromised.","PDRN supports repair and calming.","This isn't about glow — it's about recovery."],
@@ -239,7 +251,7 @@ const PRODUCTS = {
         visual:["Show the tube & texture","Smooth it into skin, non-greasy finish","Natural lighting, no filters"],
         cta:["Linked on TikTok Shop.","My repair step that stays in my routine."]}
     ]},
-  copper:{ name:"PDRN Copper Peptide Serum", size:"30ml",
+  copper:{ name:"PDRN Copper Peptide Serum", hero:true, size:"30ml",
     hooks:[
       {label:"Not all peptides are equal", hook:"Not all peptides are equal.",
         say:["Copper Peptide serum from K-pharmacy brand Dr.Reju-All.","1,200ppm PDRN + 1,000ppm Copper Peptide.","PDRN supports repair, copper peptides support firmer-looking skin.","Blue Capsule Technology protects the actives from oxidation until you apply."],
@@ -260,7 +272,7 @@ const PRODUCTS = {
         visual:["Bare skin in natural light","Ultra-close texture shot","Slow, intentional application, no filters","Before: tight/stressed → After: calm/hydrated"],
         cta:["Repair → hydration → glow follows.","This step stays in my routine."]}
     ]},
-  lip:{ name:"PDRN Rejuvenating Lip Serum", size:"10ml",
+  lip:{ name:"PDRN Rejuvenating Lip Serum", hero:true, size:"10ml",
     hooks:[
       {label:"Dry → plump lips overnight", hook:"From dry to plump lips overnight?",
         say:["PDRN lip serum made by Korean pharmacists.","Lips are thinner and more sensitive — they need special care.","LipoZip PDRN conditions, while hibiscus AHA + lactic acid gently exfoliate flaky lips."],
@@ -304,8 +316,40 @@ let uploadedFile=null, lastStat=null;
 // ============================================================
 //  Product / brief UI
 // ============================================================
+// Always-on resources pinned above the app. The Content Brief link is fixed;
+// the Data Library link can be pasted in-app (saved to localStorage) so we
+// never hard-code a guessed URL.
+const RESOURCES=[
+  { key:"brief",   icon:"📋", label:"Content Brief",
+    url:"https://pjph503ni774.jp.larksuite.com/wiki/NB57wnKQ7iKIIJkBlPAjvJLjpng" },
+  { key:"datalib", icon:"📚", label:"Affiliate Data Library", url:"" }, // educational assets, pharmacy, product, test photos…
+];
+function resUrl(r){ return (localStorage.getItem("aff_res_"+r.key)||r.url||"").trim(); }
+function setResUrl(key,url){ localStorage.setItem("aff_res_"+key,url); renderPinbar(); }
+function editRes(key){
+  const r=RESOURCES.find(x=>x.key===key); if(!r) return;
+  const cur=resUrl(r);
+  const v=prompt(`Paste the link for "${r.label}":`, cur);
+  if(v!=null) setResUrl(key, v.trim());
+}
+function renderPinbar(){
+  const bar=$("pinbar"); if(!bar) return;
+  const chips=RESOURCES.map(r=>{
+    const url=resUrl(r);
+    if(url) return `<a class="pinlink" href="${url}" target="_blank" rel="noopener" title="${r.label}"
+        oncontextmenu="event.preventDefault();editRes('${r.key}')">${r.icon} ${r.label}</a>`;
+    return `<span class="pinlink pending" title="Click to add the link" onclick="editRes('${r.key}')">${r.icon} ${r.label} +</span>`;
+  }).join("");
+  bar.innerHTML=`<span class="pinlbl">📌 Always-on</span>${chips}`;
+}
+
 function fillProducts(){
-  $("productSel").innerHTML=Object.keys(PRODUCTS).map(k=>`<option value="${k}">${PRODUCTS[k].name}</option>`).join("");
+  // HERO products first, each flagged with a ⭐, then the rest.
+  const keys=Object.keys(PRODUCTS).sort((a,b)=>(PRODUCTS[b].hero?1:0)-(PRODUCTS[a].hero?1:0));
+  $("productSel").innerHTML=keys.map(k=>{
+    const p=PRODUCTS[k];
+    return `<option value="${k}">${p.hero?"⭐ ":""}${p.name}${p.hero?" (HERO)":""}</option>`;
+  }).join("");
   fillHooks();
 }
 function fillHooks(){
@@ -867,6 +911,7 @@ $("transcript").oninput=computeMetrics;
 $("btnSettings").onclick=openSettings;
 $("setCancel").onclick=()=>$("settingsModal").classList.remove("open");
 $("setSave").onclick=saveSettings;
+renderPinbar();
 fillProducts();
 if(!SR){ $("transcript").placeholder="This browser doesn't support speech recognition (Chrome recommended). Type what you said after recording."; }
 </script>
