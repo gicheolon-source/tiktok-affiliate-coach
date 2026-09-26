@@ -9,7 +9,7 @@
 // If ANTHROPIC_API_KEY is not set, returns 501 and the frontend falls back to
 // the user's own browser-stored key.
 
-const ALLOWED_MODELS = ["claude-sonnet-5", "claude-opus-5", "claude-haiku-4-5"];
+const ALLOWED_MODELS = ["claude-sonnet-5", "claude-opus-5-5", "claude-haiku-4-5"];
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
