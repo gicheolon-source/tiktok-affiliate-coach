@@ -91,7 +91,12 @@ async function getProductIds(call, storeId, start, end) {
 
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
-  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  // Optional team passcode gate (mirrors api/feedback.js) — keeps store GMV private.
+  const need = process.env.APP_PASSCODE;
+  if (need && (req.headers["x-app-passcode"] || "") !== need) {
+    return res.status(401).json({ ok: false, error: "Incorrect access passcode." });
+  }
 
   const region = req.query.region === "uk" ? "uk" : "us";
   const TOKEN = region === "uk" ? TOKEN_UK : TOKEN_US;

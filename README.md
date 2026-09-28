@@ -1,35 +1,51 @@
 # Dr.Reju-All · 틱톡 어필리에이트 영상 코치
 
-TikTok Shop 어필리에이트 영상 연습용 웹앱. **카메라로 영상을 녹화**하면 프레임(비주얼)과
-음성 전사를 함께 Claude 멀티모달로 분석해서 어필리에이트 영상으로 **점수**를 매깁니다.
+TikTok Shop 어필리에이트 영상 채점 웹앱. 크리에이터가 **게시한 최종 영상을 업로드**(또는 카메라로 바로 녹화)하고
+TikTok 링크를 붙이면, 프레임 + 음성 전사 + **EUKA 실제 성과 데이터**를 Claude 멀티모달로 분석해 점수를 매깁니다.
 
 ## 채점 항목
-- **Key idea** — 하나의 명확한 메시지인가
-- **Video hook** — 첫 3초(첫 프레임 + 오프닝 멘트)가 스크롤을 멈추는가
-- **Selling point** — 전사가 제품의 실제 셀링포인트를 정확히 전달했는가 (제품 사실 기준)
-- **Camera action** — 프레임에서 구도(9:16)·조명·제품 노출·시연·에너지
-- **Delivery** — 페이스·명료성·자연스러운 영어
-- **Ad-safety** — 틱톡 금지어/과장 클레임(miracle·heals·anti-aging·"Amazon" 등) 자동 플래그
+- **Key idea / Video hook(첫 3초) / TikTok algorithm fit / Face on camera**
+- **Selling point / Product explanation** — 제품 사실 기준으로 셀링포인트 전달 여부
+- **Camera action / Delivery**
+- **Ad-safety** — 틱톡 금지어·과장 클레임(miracle·heals·anti-aging·"Amazon" 등) 자동 플래그
+- (링크 입력 시) EUKA 실제 조회수·좋아요·댓글·GMV·판매수량 반영 — US / UK 스토어
 
-결과: 종합 점수(1-100) + 등급 + 셀링포인트 hit/miss + 카메라 코칭 + 더 강한 훅/개선 대본.
+결과: 종합 점수(1-100) + 등급 + 셀링포인트 hit/miss + 카메라 코칭 + 강점·우선 개선점 + 더 강한 훅/개선 대본.
 
-## 동작 방식
-- 브라우저에서 `getUserMedia`로 카메라+마이크 → `MediaRecorder` 녹화, 녹화 중 프레임 캡처.
-- Web Speech API로 실시간 전사(미지원 시 직접 입력).
-- 프레임 최대 8장(저해상도) + 전사를 Claude(비전)로 전송 → 구조화 채점.
-- **영상 원본은 서버로 전송/저장되지 않음** (채점용 저해상도 프레임만 전송).
+## 구조 (빌드 불필요 · 정적 페이지 + Vercel 서버리스 함수)
+| 파일 | 역할 |
+|---|---|
+| `index.html` | 앱 전체 (UI · 프레임 추출 · 채점 요청) |
+| `api/feedback.js` | Claude API 프록시 (서버 키) |
+| `api/transcribe.js` | OpenAI Whisper 전사 프록시 (iPhone/Safari 지원) |
+| `api/euka.js` | EUKA 영상 성과 조회 (US/UK) |
 
-## API 키 — 두 가지 방식
-1. **개인·로컬용:** 설정에서 본인 Claude API 키 입력(이 브라우저 localStorage에만 저장).
-2. **서버 키(팀 공용):** Vercel 서버리스 `api/feedback.js`가 서버 키로 대신 호출.
-   - `ANTHROPIC_API_KEY` = `sk-ant-...` (필수)
-   - `APP_PASSCODE` = 짧은 접속 비밀번호 (권장) → 사용자는 이 비밀번호만 입력.
+영상 원본은 서버에 저장되지 않습니다 (저해상도 프레임 + 오디오만 전송).
 
-## 배포 (Vercel, 빌드 불필요 · 정적 + 서버리스 함수)
-1. 이 폴더를 GitHub 새 저장소에 push.
-2. Vercel에서 New Project → 그 저장소 Import → 그대로 Deploy (Framework: Other).
-3. Settings → Environment Variables 에 `ANTHROPIC_API_KEY`(+선택 `APP_PASSCODE`) 추가 후 Redeploy.
-4. 이후 `git push` 하면 자동 배포.
+## 환경 변수 (Vercel → Settings → Environment Variables)
+| 이름 | 필수 | 설명 |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | ✅ | `sk-ant-...` — 채점 |
+| `APP_PASSCODE` | ✅ 권장 | 팀 접속 비밀번호. 없으면 URL만 알면 누구나 API 크레딧·스토어 GMV 조회 가능 |
+| `OPENAI_API_KEY` | 권장 | Whisper 전사. 없으면 수동 전사 입력 |
+| `EUKA_TOKEN` | 선택 | US 스토어 EUKA 토큰 (`Bearer ...` 포함) |
+| `EUKA_TOKEN_UK` | 선택 | UK 스토어 EUKA 토큰 (`Bearer ...` 포함) |
+
+## 배포 (Vercel)
+1. [vercel.com](https://vercel.com) 로그인 (GitHub 계정으로) → **Add New… → Project**.
+2. `tiktok-affiliate-coach` 저장소 **Import** → Framework Preset: **Other** → 빌드 설정은 비워둔 채 **Deploy**.
+3. **Settings → Environment Variables**에 위 변수 입력 → **Deployments → Redeploy**.
+4. 발급된 `https://<프로젝트>.vercel.app` 접속 → ⚙️ Settings에 `APP_PASSCODE` 입력 후 사용.
+5. 이후 `main`에 push하면 자동 재배포.
+
+## 📲 앱으로 설치 (PWA)
+배포된 주소에서 폰 홈 화면에 **Dr.Reju-All Affiliate Coach** 앱으로 설치됩니다 (앱스토어 불필요, 배포하면 자동 업데이트).
+- **iPhone (Safari):** 공유 버튼 → **홈 화면에 추가**
+- **Android / PC (Chrome):** 상단 **📲 Install app** 버튼 또는 주소창의 설치 아이콘
+- 관련 파일: `manifest.webmanifest`, `sw.js`, `icons/`
+
+## 로컬 실행
+`python -m http.server 4180` → 정적 UI만 동작 (API 함수는 `vercel dev` 필요, 또는 Settings에 개인 Claude 키 입력).
 
 ## 요구사항
-- Chrome 권장(음성인식/녹화), 카메라·마이크 권한, HTTPS(배포 시 자동).
+- Chrome 권장 (iPhone Safari는 Whisper 서버 키 필요), HTTPS (Vercel 자동).
