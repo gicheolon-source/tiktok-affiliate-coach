@@ -38,6 +38,12 @@ TikTok 링크를 붙이면, 프레임 + 음성 전사 + **EUKA 실제 성과 데
 4. 발급된 `https://<프로젝트>.vercel.app` 접속 → ⚙️ Settings에 `APP_PASSCODE` 입력 후 사용.
 5. 이후 `main`에 push하면 자동 재배포.
 
+## 📲 앱으로 설치 (PWA)
+배포된 주소에서 폰 홈 화면에 **Dr.Reju-All Affiliate Coach** 앱으로 설치됩니다 (앱스토어 불필요, 배포하면 자동 업데이트).
+- **iPhone (Safari):** 공유 버튼 → **홈 화면에 추가**
+- **Android / PC (Chrome):** 상단 **📲 Install app** 버튼 또는 주소창의 설치 아이콘
+- 관련 파일: `manifest.webmanifest`, `sw.js`, `icons/`
+
 ## 로컬 실행
 `python -m http.server 4180` → 정적 UI만 동작 (API 함수는 `vercel dev` 필요, 또는 Settings에 개인 Claude 키 입력).
 
